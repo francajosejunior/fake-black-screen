@@ -1,34 +1,45 @@
-import { FullScreen, useFullScreenHandle } from "react-full-screen";
-
 import { useEffect, useState } from "react";
 import ReactNoSleep from "react-no-sleep";
 import "./App.css";
+import { Status } from "./Status";
 
 function App() {
-  const handle = useFullScreenHandle();
-  const [isFull, setIsFull] = useState<boolean | undefined>(undefined);
-
+  const [focus, setFocus] = useState(false);
   useEffect(() => {
     document.addEventListener("contextmenu", (event) => event.preventDefault());
   }, []);
 
+  useEffect(() => {
+    const handleWindowBlur = () => {
+      setFocus(false);
+    };
+
+    const handleWindowFocus = () => {
+      setFocus(true);
+    };
+
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, []);
+
   return (
     <ReactNoSleep>
-      {({ isOn, enable }) => (
-        <FullScreen
-          handle={handle}
-          onChange={(state: boolean) => setIsFull(state)}
-        >
-          <div className="container">
-            <div
-              className={`lock-image ${isOn && isFull && "no-cursor"}`}
-              onDoubleClick={() => {
-                handle.enter();
-                enable();
-              }}
-            />
-          </div>
-        </FullScreen>
+      {({ isOn, enable, disable }) => (
+        <div className="container">
+          <Status isHoldingScreen={focus && isOn} />
+          <div
+            className={`lock-image`}
+            onDoubleClick={() => {
+              if (isOn) disable();
+              else enable();
+            }}
+          />
+        </div>
       )}
     </ReactNoSleep>
   );
